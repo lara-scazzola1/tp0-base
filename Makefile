@@ -37,3 +37,8 @@ docker-compose-down:
 docker-compose-logs:
 	docker compose -f docker-compose-dev.yaml logs -f
 .PHONY: docker-compose-logs
+
+docker-compose-start:
+	docker compose -f docker-compose-dev.yaml up -d
+.PHONY: docker-compose-start
+

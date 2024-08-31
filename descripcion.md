@@ -27,3 +27,25 @@ Se montaron los archivos config.ini para el servidor y config.yaml para el clien
 
 Para probar que verdaderamente funcionaba se agrego el comando docker-compose-start en el makefile. Se probo cambiando el puerto del servidor y se inicio el docker-compose con el comando make docker-compose-start y se pudo ver que no se lograron conectar, por lo que cambio la configuracion sin necesidad de hacer el build.
 
+## Ejercicio 3
+
+Antes de ejecutar el script de validacion se debe correr el docker-compose con el comando 
+
+```bash
+make docker-compose-up
+```
+
+Para dar permisos para ejecutar el script de generación de docker-compose.yml, se debe ejecutar el siguiente comando:
+
+```bash
+chmod +x validar-echo-server.sh
+```
+
+Luego, para ejecutar el script, se debe ejecutar el siguiente comando:
+
+```bash
+./validar-echo-server.sh
+```
+
+El script levanta un container de doker que se conecta a la red que se configuro en el docker compose (en la que se lanzo el servidor y el cliente). Luego se una netcat para enviarle un mensaje al servidor, si el servidor responde con el mismo mensaje que se envio, el script imprime por pantalla `action: test_echo_server | result: success`, de lo contrario `imprimir:action: test_echo_server | result: fail`.
+

@@ -67,21 +67,22 @@ func (c *Client) StartClientLoop(exit chan os.Signal) {
 				return
 			}
 
-			msg := fmt.Sprintf(
+			msg_formateado := fmt.Sprintf(
 				"[CLIENT %v] Message N°%v\n",
 				c.config.ID,
 				msgID,
 			)
-			buf := make([]byte, len(msg))
-			err = c.socket.Sendall(len(msg), buf)
+
+			bytes := []byte(msg_formateado)
+			err = c.socket.Sendall(len(bytes), bytes)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			buf = make([]byte, len(msg))
-			err = c.socket.Recvall(len(msg), buf)
-
+			buf := make([]byte, 1024)
+			err = c.socket.Recvall(len(bytes), buf)
+			msg := string(buf[0:len(bytes)])
 			c.socket.Close()
 
 			if err != nil {
@@ -91,7 +92,6 @@ func (c *Client) StartClientLoop(exit chan os.Signal) {
 				)
 				return
 			}
-			fmt.Println(string(buf))
 
 			log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
 				c.config.ID,

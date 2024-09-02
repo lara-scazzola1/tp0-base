@@ -27,7 +27,6 @@ def write_client_config(file, client_number):
     file.write("    entrypoint: /client\n")
     file.write("    environment:\n")
     file.write(f"      - CLI_ID={client_number}\n")
-    file.write("      - CLI_LOG_LEVEL=DEBUG\n")
     file.write("    networks:\n")
     file.write("      - testing_net\n")
     file.write("    depends_on:\n")

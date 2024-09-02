@@ -11,8 +11,8 @@ if ! docker network ls | grep -q "${NETWORK_NAME}"; then
   exit 1
 fi
 
-RESPONSE=$(docker run --network="${NETWORK_NAME}" --rm ubuntu sh -c \
-  "apt-get update && apt-get install -y netcat-openbsd && echo '${MESSAGE}' | nc ${SERVER_CONTAINER_NAME} ${SERVER_PORT}" 2>/dev/null | tail -n 1)
+RESPONSE=$(docker run --network="${NETWORK_NAME}" --rm busybox sh -c \
+  "echo '${MESSAGE}' | nc ${SERVER_CONTAINER_NAME} ${SERVER_PORT}" 2>/dev/null | tail -n 1)
 
 if [ "${RESPONSE}" == "${MESSAGE}" ]; then
   echo "action: test_echo_server | result: success"

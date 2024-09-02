@@ -12,7 +12,7 @@ if ! docker network ls | grep -q "${NETWORK_NAME}"; then
 fi
 
 RESPONSE=$(docker run --network="${NETWORK_NAME}" --rm busybox sh -c \
-  "echo '${MESSAGE}' | nc ${SERVER_CONTAINER_NAME} ${SERVER_PORT}" 2>/dev/null | tail -n 1)
+  "echo '${MESSAGE}' | nc ${SERVER_CONTAINER_NAME} ${SERVER_PORT}" | tail -n 1)
 
 if [ "${RESPONSE}" == "${MESSAGE}" ]; then
   echo "action: test_echo_server | result: success"

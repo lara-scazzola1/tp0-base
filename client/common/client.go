@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -23,7 +22,7 @@ type ClientConfig struct {
 // Client Entity that encapsulates how
 type Client struct {
 	config ClientConfig
-	conn   net.Conn
+	socket *Socket
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -48,7 +47,7 @@ func (c *Client) createClientSocket() error {
 		)
 		return err
 	}
-	c.conn = conn
+	c.socket = NewSocket(conn)
 	return nil
 }
 
@@ -68,15 +67,22 @@ func (c *Client) StartClientLoop(exit chan os.Signal) {
 				return
 			}
 
-			// TODO: Modify the send to avoid short-write
-			fmt.Fprintf(
-				c.conn,
+			msg := fmt.Sprintf(
 				"[CLIENT %v] Message N°%v\n",
 				c.config.ID,
 				msgID,
 			)
-			msg, err := bufio.NewReader(c.conn).ReadString('\n')
-			c.conn.Close()
+			buf := make([]byte, len(msg))
+			err = c.socket.Sendall(len(msg), buf)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			buf = make([]byte, len(msg))
+			err = c.socket.Recvall(len(msg), buf)
+
+			c.socket.Close()
 
 			if err != nil {
 				log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
@@ -85,6 +91,7 @@ func (c *Client) StartClientLoop(exit chan os.Signal) {
 				)
 				return
 			}
+			fmt.Println(string(buf))
 
 			log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
 				c.config.ID,

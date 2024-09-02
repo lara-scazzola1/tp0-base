@@ -14,7 +14,6 @@ def write_server_config(file):
     file.write("    entrypoint: python3 /main.py\n")
     file.write("    environment:\n")
     file.write("      - PYTHONUNBUFFERED=1\n")
-    file.write("      - LOGGING_LEVEL=INFO\n")
     file.write("    networks:\n")
     file.write("      - testing_net\n\n")
 

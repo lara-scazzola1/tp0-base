@@ -1,14 +1,12 @@
-import socket
+from common.socket import *
 import logging
 import signal
 
 
 class Server:
     def __init__(self, port, listen_backlog):
-        # Initialize server socket
-        self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.bind(('', port))
-        self._server_socket.listen(listen_backlog)
+        self._socket = Socket()
+        self._socket.bind_and_listen(port, listen_backlog)
         self._stop = False
 
     def run(self):
@@ -23,7 +21,7 @@ class Server:
         signal.signal(signal.SIGTERM, self.stop_server)
 
         while not self._stop:
-            client_sock = self.__accept_new_connection()
+            client_sock = self._socket.accept()
             if client_sock:
                 self.__handle_client_connection(client_sock)
         
@@ -48,23 +46,8 @@ class Server:
         finally:
             client_sock.close()
 
-    def __accept_new_connection(self):
-        """
-        Accept new connections
-
-        Function blocks until a connection to a client is made.
-        Then connection created is printed and returned
-        """
-
-        # Connection arrived
-        logging.info('action: accept_connections | result: in_progress')
-        try:
-            c, addr = self._server_socket.accept()
-        except OSError as e:
-            return None
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
     
     def stop_server(self, signum, frame):
         self._server_socket.close()
         self._stop = True
+

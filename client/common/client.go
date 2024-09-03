@@ -1,12 +1,12 @@
 package common
 
 import (
-	"fmt"
 	"net"
 	"os"
 	"time"
 
 	"github.com/op/go-logging"
+	"github.com/spf13/viper"
 )
 
 var log = logging.MustGetLogger("log")
@@ -21,8 +21,8 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config ClientConfig
-	socket *Socket
+	config   ClientConfig
+	protocol *Protocol
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -47,12 +47,12 @@ func (c *Client) createClientSocket() error {
 		)
 		return err
 	}
-	c.socket = NewSocket(conn)
+	c.protocol = NewProtocol(conn)
 	return nil
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop(exit chan os.Signal) {
+func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
@@ -67,36 +67,49 @@ func (c *Client) StartClientLoop(exit chan os.Signal) {
 				return
 			}
 
-			msg_formateado := fmt.Sprintf(
-				"[CLIENT %v] Message N°%v\n",
-				c.config.ID,
-				msgID,
+			bet, err := NewBet(
+				v.GetString("nombre"),
+				v.GetString("apellido"),
+				v.GetUint32("documento"),
+				v.GetString("nacimiento"),
+				v.GetUint32("numero"),
 			)
 
-			bytes := []byte(msg_formateado)
-			err = c.socket.Sendall(len(bytes), bytes)
 			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			buf := make([]byte, 1024)
-			err = c.socket.Recvall(len(bytes), buf)
-			msg := string(buf[0:len(bytes)])
-			c.socket.Close()
-
-			if err != nil {
-				log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				log.Errorf("action: create_bet | result: fail | client_id: %v | error: %v",
 					c.config.ID,
 					err,
 				)
 				return
 			}
 
-			log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-				c.config.ID,
-				msg,
-			)
+			err = c.protocol.SendBet(bet)
+			if err != nil {
+				log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v",
+					c.config.ID,
+					err,
+				)
+				return
+			}
+
+			ok, err := c.protocol.ReceiveResponseBet()
+			if err != nil {
+				log.Errorf("action: receive_response_bet | result: fail | client_id: %v | error: %v",
+					c.config.ID,
+					err,
+				)
+				return
+			}
+			if !ok {
+				log.Errorf("action: receive_response_bet | result: fail | client_id: %v | error: invalid_response",
+					c.config.ID,
+				)
+				return
+			}
+
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", v.GetUint32("documento"), v.GetUint32("numero"))
+
+			c.protocol.Close()
 
 			// Wait a time between sending one message and the next one
 			time.Sleep(c.config.LoopPeriod)

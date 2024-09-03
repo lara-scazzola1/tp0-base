@@ -1,6 +1,7 @@
 import csv
 import datetime
 import time
+import struct
 
 
 """ Bets storage location. """
@@ -23,6 +24,44 @@ class Bet:
         self.document = document
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
+
+    def __repr__(self):
+        return (f"Bet(agency={self.agency}, first_name={self.first_name}, last_name={self.last_name}, "
+                f"document={self.document}, birthdate={self.birthdate}, number={self.number})")
+
+    @staticmethod
+    def deserialize(data):
+        bytes_read = 0
+
+        name_length = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+        bytes_read += 1
+
+        first_name = data[bytes_read:bytes_read+name_length].decode('utf-8')
+        bytes_read += name_length
+
+        lastname_length = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+        bytes_read += 1
+
+        last_name = data[bytes_read:bytes_read+lastname_length].decode('utf-8')
+        bytes_read += lastname_length
+
+        document = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
+        bytes_read += 4
+
+        birth_day = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+        bytes_read += 1
+
+        birth_month = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+        bytes_read += 1
+
+        birth_year = struct.unpack('>H', data[bytes_read:bytes_read+2])[0]
+        bytes_read += 2
+
+        birthdate = f"{birth_year}-{str(birth_month).zfill(2)}-{str(birth_day).zfill(2)}"
+
+        number = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
+
+        return Bet("1", first_name, last_name, document, birthdate, number)
 
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:

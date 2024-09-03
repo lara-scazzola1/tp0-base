@@ -73,6 +73,7 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 				v.GetUint32("documento"),
 				v.GetString("nacimiento"),
 				v.GetUint32("numero"),
+				uint8(v.GetUint32("agencia")),
 			)
 
 			if err != nil {

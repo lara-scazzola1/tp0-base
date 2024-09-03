@@ -45,6 +45,8 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("documento")
 	v.BindEnv("nacimiento")
 	v.BindEnv("numero")
+	v.BindEnv("agencia")
+	v.BindEnv("batch", "maxAmount")
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration

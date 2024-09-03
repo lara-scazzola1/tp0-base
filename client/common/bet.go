@@ -16,9 +16,10 @@ type Bet struct {
 	BirthMonth uint8
 	BirthYear  uint16
 	Number     uint32
+	Agency     uint8
 }
 
-func NewBet(name string, lastname string, document uint32, birthDate string, number uint32) (*Bet, error) {
+func NewBet(name string, lastname string, document uint32, birthDate string, number uint32, agency uint8) (*Bet, error) {
 	date := strings.Split(birthDate, "-")
 	if len(date) != 3 {
 		return nil, fmt.Errorf("date must have the format YYYY-MM-DD")
@@ -45,6 +46,7 @@ func NewBet(name string, lastname string, document uint32, birthDate string, num
 		BirthMonth: uint8(month),
 		BirthYear:  uint16(year),
 		Number:     number,
+		Agency:     agency,
 	}, nil
 }
 
@@ -85,6 +87,11 @@ func (b *Bet) Serialize() ([]byte, error) {
 
 	// Serializacion del numero de la apuesta en 4 bytes
 	if err := binary.Write(buffer, binary.BigEndian, b.Number); err != nil {
+		return nil, err
+	}
+
+	// Serializacion de la agencia en 1 byte
+	if err := binary.Write(buffer, binary.BigEndian, b.Agency); err != nil {
 		return nil, err
 	}
 

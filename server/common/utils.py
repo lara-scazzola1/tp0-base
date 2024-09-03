@@ -27,7 +27,7 @@ class Bet:
 
     def __repr__(self):
         return (f"Bet(agency={self.agency}, first_name={self.first_name}, last_name={self.last_name}, "
-                f"document={self.document}, birthdate={self.birthdate}, number={self.number})")
+                f"document={self.document}, birthdate={self.birthdate}, number={self.number}, agency={self.agency})")
 
     @staticmethod
     def deserialize(data):
@@ -60,8 +60,10 @@ class Bet:
         birthdate = f"{birth_year}-{str(birth_month).zfill(2)}-{str(birth_day).zfill(2)}"
 
         number = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
+        bytes_read += 4
 
-        return Bet("1", first_name, last_name, document, birthdate, number)
+        agency = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+        return Bet(agency, first_name, last_name, document, birthdate, number)
 
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:

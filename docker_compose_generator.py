@@ -34,6 +34,7 @@ def write_client_config(file, client_number):
     file.write("      - CLI_DOCUMENTO=30904465\n")
     file.write("      - CLI_NACIMIENTO=1999-03-17\n")
     file.write("      - CLI_NUMERO=7574\n")
+    file.write("      - CLI_AGENCIA=1\n")
     file.write("    networks:\n")
     file.write("      - testing_net\n")
     file.write("    depends_on:\n")

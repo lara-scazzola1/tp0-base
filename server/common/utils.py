@@ -33,36 +33,67 @@ class Bet:
     def deserialize(data):
         bytes_read = 0
 
+        if len(data) < 1:
+            return None
+
         name_length = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
         bytes_read += 1
+
+        if len(data) < bytes_read + name_length:
+            return None
 
         first_name = data[bytes_read:bytes_read+name_length].decode('utf-8')
         bytes_read += name_length
 
+        if len(data) < bytes_read + 1:
+            return None
+
         lastname_length = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
         bytes_read += 1
+
+        if len(data) < bytes_read + lastname_length:
+            return None
 
         last_name = data[bytes_read:bytes_read+lastname_length].decode('utf-8')
         bytes_read += lastname_length
 
+        if len(data) < bytes_read + 4:
+            return None
+
         document = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
         bytes_read += 4
+
+        if len(data) < bytes_read + 1:
+            return None
 
         birth_day = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
         bytes_read += 1
 
+        if len(data) < bytes_read + 1:
+            return None
+
         birth_month = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
         bytes_read += 1
+
+        if len(data) < bytes_read + 2:
+            return None
 
         birth_year = struct.unpack('>H', data[bytes_read:bytes_read+2])[0]
         bytes_read += 2
 
         birthdate = f"{birth_year}-{str(birth_month).zfill(2)}-{str(birth_day).zfill(2)}"
 
+        if len(data) < bytes_read + 4:
+            return None
+
         number = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
         bytes_read += 4
 
+        if len(data) < bytes_read + 1:
+            return None
+
         agency = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+
         return Bet(agency, first_name, last_name, document, birthdate, number)
 
 """ Checks whether a bet won the prize or not. """

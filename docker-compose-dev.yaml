@@ -17,6 +17,7 @@ services:
     image: client:latest
     volumes:
       - ./client/config.yaml:/config.yaml
+      - ./client/dataset:/dataset
     entrypoint: /client
     environment:
       - CLI_ID=1

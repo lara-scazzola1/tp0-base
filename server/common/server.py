@@ -38,15 +38,27 @@ class Server:
         """
         try:
             protocol = Protocol(client_sock)
-            command, data_size = protocol.receive_command()
-            if command == BET_COMMAND:
-                bet = protocol.receive_bet(data_size)
-                store_bets([bet])
-                logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-                protocol.send_response_bet()
-                return
+            while not self._stop:
+                command, data_size = protocol.receive_command()
+                if command == BATCH_COMMAND:
+                    amount_bets_send, bets = protocol.receive_batch(data_size)
+                    if amount_bets_send != len(bets):
+                        logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
+                        protocol.send_response_batch(amount_bets_send)
+                        continue    
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
+                    store_bets(bets)
+                    protocol.send_response_batch(len(bets))
+                    pass
+                if command == BET_COMMAND:
+                    bet = protocol.receive_bet(data_size)
+                    store_bets([bet])
+                    #logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+                    protocol.send_response_bet()
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error("action: receive_message | result: fail | error: ", e)
+        except Exception as e:
+            logging.error("action: receive_message | result: fail | error: ", e)
         finally:
             protocol.close()
 

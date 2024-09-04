@@ -1,6 +1,7 @@
 from common.socket import *
 from common.protocol import *
 from common.utils import *
+import multiprocessing
 import logging
 import signal
 
@@ -13,23 +14,7 @@ class Server:
         self._stop = False
         self._protocol = Protocol()
         self._connections = {}
-        self._amount_wait_winners = 0
-
-    def run(self):
-        """
-        Dummy Server loop
-
-        Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
-        """
-
-        signal.signal(signal.SIGTERM, self.stop_server)
-
-        while not self._stop:
-            client_sock = self._socket.accept()
-            if client_sock:
-                self.__handle_client_connection(client_sock)
+        self._processes = {}
         
     def __handle_receive_client_id(self, client_sock):
         client_id = self._protocol.receive_client_id(client_sock)
@@ -51,12 +36,11 @@ class Server:
         for id, conn in self._connections.items():
             self._protocol.send_response_winners(conn, agency_winners[id - 1])
             
-
     def __handle_close_connections(self):
         for conn in self._connections.values():
             conn.close()   
 
-    def __handle_client_connection(self, client_sock):
+    def __handle_client_connection(self, client_sock, client_id):
         """
         Read message from a specific client socket and closes the socket
 
@@ -64,6 +48,7 @@ class Server:
         client socket will also be closed
         """
         try:
+            print(f"Client {client_id} connected")
             while not self._stop:
                 command = self._protocol.receive_command(client_sock)
 
@@ -78,20 +63,43 @@ class Server:
                         logging.error(f"action: apuesta_recibida | result: fail | cantidad: {amount}")  
 
                 if command == WAIT_WINNERS_COMMAND:
-                    self._amount_wait_winners += 1
-                    if self._amount_wait_winners == TOTAL_CONNECTIONS:
-                        logging.info("action: sorteo | result: success")
-                        self.__send_winners()
                     break
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: ", e)
-        finally:
-            if self._amount_wait_winners == TOTAL_CONNECTIONS:
-                self.__handle_close_connections()
 
     
     def stop_server(self, signum, frame):
         self._server_socket.close()
         self._stop = True
+
+    def run(self):
+        """
+        Dummy Server loop
+
+        Server that accept a new connections and establishes a
+        communication with a client. After client with communucation
+        finishes, servers starts to accept new connections again
+        """
+
+        signal.signal(signal.SIGTERM, self.stop_server)
+
+        while not self._stop and len(self._connections) < TOTAL_CONNECTIONS:
+            client_sock = self._socket.accept()
+            if client_sock:
+                _ = self._protocol.receive_command(client_sock)
+                client_id = self._protocol.receive_client_id(client_sock)
+                self._connections[client_id] = client_sock
+
+                process = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock, client_id))
+                self._processes[client_id] = process
+                process.start()
+
+        for process in self._processes.values():
+            process.join()
+
+        self.__send_winners()
+        logging.info("action: sorteo | result: success")
+
+        self.__handle_close_connections()
 

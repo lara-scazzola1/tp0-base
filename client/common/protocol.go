@@ -51,39 +51,6 @@ func serializeCommandBet(bet *Bet) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (p *Protocol) SendBet(bet *Bet) error {
-	buffer := new(bytes.Buffer)
-
-	binary.Write(buffer, binary.BigEndian, uint8(BET_COMMAND))
-
-	serializeCommandBet, err := serializeCommandBet(bet)
-	if err != nil {
-		return err
-	}
-
-	binary.Write(buffer, binary.BigEndian, serializeCommandBet)
-
-	err = p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Protocol) ReceiveResponseBet() (bool, error) {
-	buf := make([]byte, 1)
-
-	err := p.socket.Recvall(1, buf)
-	if err != nil {
-		return false, err
-	}
-	if buf[0] != RESPONSE_BET_COMMAND {
-		return false, nil
-	}
-	return true, nil
-}
-
 func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
 	bufferBetsData := new(bytes.Buffer)
 	for _, bet := range bets {
@@ -138,19 +105,6 @@ func (p *Protocol) ReceiveBatchResponse(amountBets int, exit chan os.Signal) (bo
 
 func (p *Protocol) Close() error {
 	return p.socket.Close()
-}
-
-func (p *Protocol) SendDisconnect() error {
-	buffer := new(bytes.Buffer)
-
-	binary.Write(buffer, binary.BigEndian, uint8(DISCONNECT_COMMAND))
-
-	err := p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (p *Protocol) SendWaitingWinners() error {

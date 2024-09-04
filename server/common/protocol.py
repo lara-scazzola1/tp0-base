@@ -2,14 +2,11 @@ import struct
 from common.utils import Bet
 
 # comandos que recibe
-BET_COMMAND = 1
 BATCH_COMMAND = 2
-DISCONNECT_COMMAND = 3
 WAIT_WINNERS_COMMAND = 4
 CLIENT_ID = 5
 
 # comandos que manda
-RESPONSE_BET_COMMAND = 1
 RESPONSE_BATCH_COMMAND_OK    = 2
 RESPONSE_BATCH_COMMAND_ERROR = 3
 RESPONSE_WINNERS_COMMAND = 4
@@ -19,17 +16,12 @@ class Protocol:
     def receive_command(self, skt):
         command = struct.unpack('B', skt.recvall(1))[0]
         return command
-
-    def receive_bet(self, skt):
-        data_size = struct.unpack('>I', skt.recvall(4))[0]
-        
-        data = skt.recvall(data_size)
-        return Bet.deserialize(data)
     
     def receive_batch(self, skt):
         data_size = struct.unpack('>I', skt.recvall(4))[0]
-
+        
         data = skt.recvall(data_size)
+
         bets = []
         bytes_read = 0
         amount_bets_send = 0
@@ -43,9 +35,10 @@ class Protocol:
             if bet is not None:
                 bets.append(bet)
         return amount_bets_send, bets
-
-    def send_response_bet(self, skt):
-        skt.sendall(struct.pack('B', RESPONSE_BET_COMMAND))
+    
+    def receive_client_id(self, skt):
+        data = skt.recvall(1)
+        return struct.unpack('B', data)[0]
 
     def send_response_batch(self, ok, skt):
         if ok:
@@ -63,9 +56,5 @@ class Protocol:
         data += struct.pack('>I', len(data_documents))
         data += data_documents
         skt.sendall(data)
-
-    def receive_client_id(self, skt):
-        data = skt.recvall(1)
-        return struct.unpack('B', data)[0]
 
 

@@ -31,7 +31,30 @@ class Server:
             if client_sock:
                 self.__handle_client_connection(client_sock)
         
+    def __handle_receive_client_id(self, client_sock):
+        client_id = self._protocol.receive_client_id(client_sock)
+        self._connections[client_id] = client_sock
 
+    def __handle_receive_batch(self, client_sock):
+        amount_bets_send, bets_received = self._protocol.receive_batch(client_sock)
+        store_bets(bets_received)
+        ok = amount_bets_send == len(bets_received)
+        self._protocol.send_response_batch(ok, client_sock)
+        return ok, len(bets_received)
+
+    def __send_winners(self):
+        bets = load_bets()
+        agency_winners = [[] for i in range(TOTAL_CONNECTIONS)]
+        for bet in bets:
+            if has_won(bet):
+                agency_winners[bet.agency - 1].append(int(bet.document))
+        for id, conn in self._connections.items():
+            self._protocol.send_response_winners(conn, agency_winners[id - 1])
+            
+
+    def __handle_close_connections(self):
+        for conn in self._connections.values():
+            conn.close()   
 
     def __handle_client_connection(self, client_sock):
         """
@@ -45,51 +68,27 @@ class Server:
                 command = self._protocol.receive_command(client_sock)
 
                 if command == CLIENT_ID:
-                    client_id = self._protocol.receive_client_id(client_sock)
-                    self._connections[client_id] = client_sock
+                    self.__handle_receive_client_id(client_sock)
 
                 if command == BATCH_COMMAND:
-                    amount_bets_send, bets = self._protocol.receive_batch(client_sock)
-                    ok = amount_bets_send == len(bets)
+                    ok, amount = self.__handle_receive_batch(client_sock)
                     if ok:
-                        #logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
-                        store_bets(bets)
+                        logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount}")
                     else:
-                        logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")  
-                    self._protocol.send_response_batch(amount_bets_send, client_sock)
-
-                if command == BET_COMMAND:
-                    bet = self._protocol.receive_bet(client_sock)
-                    store_bets([bet])
-                    logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-                    self._protocol.send_response_bet(client_sock)
-
-                if command == DISCONNECT_COMMAND:
-                    logging.info("action: desconexion | result: success")
-                    break
+                        logging.error(f"action: apuesta_recibida | result: fail | cantidad: {amount}")  
 
                 if command == WAIT_WINNERS_COMMAND:
-                    logging.info("action: esperar_ganador | result: success")
                     self._amount_wait_winners += 1
                     if self._amount_wait_winners == TOTAL_CONNECTIONS:
                         logging.info("action: sorteo | result: success")
-                        bets = load_bets()
-                        agency_winners = [[] for i in range(TOTAL_CONNECTIONS)]
-                        for bet in bets:
-                            if has_won(bet):
-                                logging.info(f"action: ganador | result: success | dni: {bet.document} | numero: {bet.number}")
-                                agency_winners[bet.agency - 1].append(int(bet.document))
-                        for id, conn in self._connections.items():
-                            self._protocol.send_response_winners(conn, agency_winners[id - 1])
+                        self.__send_winners()
                     break
+
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: ", e)
-        except Exception as e:
             logging.error("action: receive_message | result: fail | error: ", e)
         finally:
             if self._amount_wait_winners == TOTAL_CONNECTIONS:
-                for conn in self._connections.values():
-                    conn.close()
+                self.__handle_close_connections()
 
     
     def stop_server(self, signum, frame):

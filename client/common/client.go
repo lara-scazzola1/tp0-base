@@ -165,7 +165,7 @@ func processFile(file string, maxBatchSize int, c *Client, exit chan os.Signal) 
 					return err
 				}
 				batch = []*Bet{}
-				//time.Sleep(c.config.LoopPeriod)
+				time.Sleep(c.config.LoopPeriod)
 			}
 		}
 	}
@@ -185,25 +185,25 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 		return
 	}
 
+	// Send the ID to the server
 	id, err := strconv.Atoi(c.config.ID)
 	if err != nil {
 		log.Errorf("Error converting ID to int: %v", err)
-		c.protocol.SendDisconnect()
 		c.protocol.Close()
 		return
 	}
 	c.protocol.SendId(uint8(id))
 
-	maxBatchSize := v.GetInt("batch.maxAmount")
-
+	// Get the files in the dataset directory
 	files, err := getFilenames("dataset")
 	if err != nil {
-		c.protocol.SendDisconnect()
 		c.protocol.Close()
 		log.Errorf("Error getting filenames: %v", err)
 		return
 	}
 
+	// Process the file with the bets
+	maxBatchSize := v.GetInt("batch.maxAmount")
 	for _, file := range files {
 		if getAgency(file) == c.config.ID {
 			err := processFile(file, maxBatchSize, c, exit)
@@ -213,7 +213,11 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 			}
 		}
 	}
+
+	// Send the winners request
 	c.protocol.SendWaitingWinners()
+
+	// Wait for the winners
 	documentsWinner, err := c.protocol.ReceiveWinners()
 	if err != nil {
 		log.Errorf("Error receiving winners: %v", err)
@@ -221,8 +225,7 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 
 	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(documentsWinner))
 
-	c.protocol.SendDisconnect()
 	c.protocol.Close()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	time.Sleep(c.config.LoopPeriod)
+	time.Sleep(time.Second * 5)
 }

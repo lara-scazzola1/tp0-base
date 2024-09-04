@@ -205,7 +205,7 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 	}
 
 	for _, file := range files {
-		if getAgency(file) != c.config.ID {
+		if getAgency(file) == c.config.ID {
 			err := processFile(file, maxBatchSize, c, exit)
 			if err != nil {
 				log.Errorf("Error processing file %s: %v", file, err)

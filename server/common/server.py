@@ -75,17 +75,13 @@ class Server:
                         logging.info("action: sorteo | result: success")
                         bets = load_bets()
                         agency_winners = [[] for i in range(TOTAL_CONNECTIONS)]
-                        winning_bets = []
                         for bet in bets:
                             if has_won(bet):
-                                winning_bets.append(bet)
-                                # logging.info(f"action: ganador | result: success | dni: {bet.document} | numero: {bet.number}")
+                                logging.info(f"action: ganador | result: success | dni: {bet.document} | numero: {bet.number}")
                                 agency_winners[bet.agency - 1].append(int(bet.document))
-                        print(winning_bets)
                         for id, conn in self._connections.items():
                             self._protocol.send_response_winners(conn, agency_winners[id - 1])
                     break
-
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: ", e)
         except Exception as e:

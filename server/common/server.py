@@ -11,7 +11,7 @@ class Server:
         self._socket.bind_and_listen(port, listen_backlog)
         self._stop = False
         self._protocol = Protocol()
-        self._connections = []
+        #self._connections = []
 
     def run(self):
         """
@@ -27,7 +27,7 @@ class Server:
         while not self._stop:
             client_sock = self._socket.accept()
             if client_sock:
-                self._connections.append(client_sock)
+                #self._connections.append(client_sock)
                 self.__handle_client_connection(client_sock)
         
 

@@ -181,41 +181,26 @@ func processFile(file string, maxBatchSize int, c *Client, exit chan os.Signal) 
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
-	//defer c.protocol.Close()
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		select {
-		case <-exit:
-			log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-			return
-		default:
-			if err := c.createClientSocket(); err != nil {
-				return
-			}
+	if err := c.createClientSocket(); err != nil {
+		return
+	}
+	defer c.protocol.Close()
+	defer c.protocol.SendDisconnect()
 
-			maxBatchSize := v.GetInt("batch.maxAmount")
+	maxBatchSize := v.GetInt("batch.maxAmount")
 
-			files, err := getFilenames("dataset")
-			if err != nil {
-				c.protocol.SendDisconnect()
-				c.protocol.Close()
-				log.Errorf("Error getting filenames: %v", err)
-				return
-			}
+	files, err := getFilenames("dataset")
+	if err != nil {
+		log.Errorf("Error getting filenames: %v", err)
+		return
+	}
 
-			for _, file := range files {
-				err := processFile(file, maxBatchSize, c, exit)
-				if err != nil {
-					log.Errorf("Error processing file %s: %v", file, err)
-					continue
-				}
-			}
-
-			c.protocol.SendDisconnect()
-			c.protocol.Close()
+	for _, file := range files {
+		err := processFile(file, maxBatchSize, c, exit)
+		if err != nil {
+			log.Errorf("Error processing file %s: %v", file, err)
+			continue
 		}
-
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }

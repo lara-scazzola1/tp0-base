@@ -10,6 +10,8 @@ class Server:
         self._socket = Socket()
         self._socket.bind_and_listen(port, listen_backlog)
         self._stop = False
+        self._protocol = Protocol()
+        self._connections = []
 
     def run(self):
         """
@@ -25,6 +27,7 @@ class Server:
         while not self._stop:
             client_sock = self._socket.accept()
             if client_sock:
+                self._connections.append(client_sock)
                 self.__handle_client_connection(client_sock)
         
 
@@ -37,27 +40,24 @@ class Server:
         client socket will also be closed
         """
         try:
-            protocol = Protocol(client_sock)
             while not self._stop:
-                command = protocol.receive_command()
+                command = self._protocol.receive_command(client_sock)
 
                 if command == BATCH_COMMAND:
-                    data_size = protocol.receive_data_size()
-                    amount_bets_send, bets = protocol.receive_batch(data_size)
+                    amount_bets_send, bets = self._protocol.receive_batch(client_sock)
                     ok = amount_bets_send == len(bets)
                     if ok:
                         logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
                         store_bets(bets)
                     else:
                         logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")  
-                    protocol.send_response_batch(amount_bets_send)
+                    self._protocol.send_response_batch(amount_bets_send, client_sock)
 
                 if command == BET_COMMAND:
-                    data_size = protocol.receive_data_size()
-                    bet = protocol.receive_bet(data_size)
+                    bet = self._protocol.receive_bet(client_sock)
                     store_bets([bet])
                     logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-                    protocol.send_response_bet()
+                    self._protocol.send_response_bet(client_sock)
 
                 if command == DISCONNECT_COMMAND:
                     logging.info("action: desconexion | result: success")
@@ -67,7 +67,7 @@ class Server:
         except Exception as e:
             logging.error("action: receive_message | result: fail | error: ", e)
         finally:
-            protocol.close()
+            client_sock.close()
 
     
     def stop_server(self, signum, frame):

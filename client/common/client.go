@@ -204,6 +204,11 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 			}
 		}
 	}
+	c.protocol.SendWaitingWinners()
+	fmt.Println("CLIENTE DESPUES DE MANDAR COMANDO WAITING WINNERS")
+	c.protocol.ReceiveWinners()
+	fmt.Println("DESPUES DE RECIBIR WINNERS")
+
 	c.protocol.SendDisconnect()
 	c.protocol.Close()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)

@@ -4,6 +4,7 @@ from common.utils import *
 import logging
 import signal
 
+TOTAL_CONNECTIONS = 5
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -11,7 +12,8 @@ class Server:
         self._socket.bind_and_listen(port, listen_backlog)
         self._stop = False
         self._protocol = Protocol()
-        #self._connections = []
+        self._connections = []
+        self._amount_wait_winners = 0
 
     def run(self):
         """
@@ -27,7 +29,7 @@ class Server:
         while not self._stop:
             client_sock = self._socket.accept()
             if client_sock:
-                #self._connections.append(client_sock)
+                self._connections.append(client_sock)
                 self.__handle_client_connection(client_sock)
         
 
@@ -47,7 +49,8 @@ class Server:
                     amount_bets_send, bets = self._protocol.receive_batch(client_sock)
                     ok = amount_bets_send == len(bets)
                     if ok:
-                        logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
+                        #logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
+                        #print(bets)
                         store_bets(bets)
                     else:
                         logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")  
@@ -62,12 +65,23 @@ class Server:
                 if command == DISCONNECT_COMMAND:
                     logging.info("action: desconexion | result: success")
                     break
+
+                if command == WAIT_WINNERS_COMMAND:
+                    logging.info("action: esperar_ganador | result: success")
+                    self._amount_wait_winners += 1
+                    if self._amount_wait_winners == TOTAL_CONNECTIONS:
+                        for connection in self._connections:
+                            self._protocol.send_response_winners(connection)
+                    break
+
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: ", e)
         except Exception as e:
             logging.error("action: receive_message | result: fail | error: ", e)
         finally:
-            client_sock.close()
+            if self._amount_wait_winners == TOTAL_CONNECTIONS:
+                for connection in self._connections:
+                    connection.close()
 
     
     def stop_server(self, signum, frame):

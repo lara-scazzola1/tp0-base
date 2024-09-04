@@ -5,11 +5,13 @@ from common.utils import Bet
 BET_COMMAND = 9
 BATCH_COMMAND = 19
 DISCONNECT_COMMAND = 29
+WAIT_WINNERS_COMMAND = 39
 
 # comandos que manda
 RESPONSE_BET_COMMAND = 9
 RESPONSE_BATCH_COMMAND_OK    = 19
 RESPONSE_BATCH_COMMAND_ERROR = 20
+RESPONSE_WINNERS_COMMAND = 39
 
 class Protocol:
     def receive_command(self, skt):
@@ -48,3 +50,6 @@ class Protocol:
             skt.sendall(struct.pack('B', RESPONSE_BATCH_COMMAND_OK))
         else:
             skt.sendall(struct.pack('B', RESPONSE_BATCH_COMMAND_ERROR))
+
+    def send_response_winners(self, skt):
+        skt.sendall(struct.pack('B', RESPONSE_WINNERS_COMMAND))

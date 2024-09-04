@@ -12,14 +12,16 @@ const (
 	MAX_SIZE_BATCH = 8 * 1024
 
 	// comandos que envia
-	BET_COMMAND        = 9
-	BATCH_COMMAND      = 19
-	DISCONNECT_COMMAND = 29
+	BET_COMMAND          = 9
+	BATCH_COMMAND        = 19
+	DISCONNECT_COMMAND   = 29
+	WAIT_WINNERS_COMMAND = 39
 
 	// comandos que recibe
 	RESPONSE_BET_COMMAND         = 9
 	RESPONSE_BATCH_COMMAND_OK    = 19
 	RESPONSE_BATCH_COMMAND_ERROR = 20
+	RESPONSE_WINNERS_COMMAND     = 39
 )
 
 type Protocol struct {
@@ -147,4 +149,29 @@ func (p *Protocol) SendDisconnect() error {
 	}
 
 	return nil
+}
+
+func (p *Protocol) SendWaitingWinners() error {
+	buffer := new(bytes.Buffer)
+
+	binary.Write(buffer, binary.BigEndian, uint8(WAIT_WINNERS_COMMAND))
+
+	err := p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *Protocol) ReceiveWinners() (string, error) {
+	buf := make([]byte, 1)
+
+	err := p.socket.Recvall(1, buf)
+	if err != nil {
+		return "", err
+	}
+	if buf[0] != RESPONSE_WINNERS_COMMAND {
+		return "", fmt.Errorf("invalid response command")
+	}
+	return "", nil
 }

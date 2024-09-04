@@ -5,6 +5,7 @@ from common.utils import Bet
 # comandos que recibe
 BET_COMMAND = 9
 BATCH_COMMAND = 19
+DISCONNECT_COMMAND = 29
 
 # comandos que manda
 RESPONSE_BET_COMMAND = 9
@@ -15,8 +16,11 @@ class Protocol:
 
     def receive_command(self):
         command = struct.unpack('B', self.socket.recvall(1))[0]
+        return command
+    
+    def receive_data_size(self):
         data_size = struct.unpack('>I', self.socket.recvall(4))[0]
-        return command, data_size
+        return data_size
 
     def receive_bet(self, data_size: int):
         data = self.socket.recvall(data_size)
@@ -28,10 +32,7 @@ class Protocol:
         bytes_read = 0
         amount_bets_send = 0
         while bytes_read < data_size:
-            is_bet = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
-            if is_bet:
-                amount_bets_send += 1
-            bytes_read += 1
+            amount_bets_send += 1
             bet_size = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
             bytes_read += 4
             bet_data = data[bytes_read:bytes_read+bet_size]

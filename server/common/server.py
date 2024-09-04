@@ -39,22 +39,31 @@ class Server:
         try:
             protocol = Protocol(client_sock)
             while not self._stop:
-                command, data_size = protocol.receive_command()
+                command = protocol.receive_command()
+
                 if command == BATCH_COMMAND:
+                    data_size = protocol.receive_data_size()
                     amount_bets_send, bets = protocol.receive_batch(data_size)
                     if amount_bets_send != len(bets):
                         logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
                         protocol.send_response_batch(amount_bets_send)
                         continue    
                     logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
+                    #print(bets)
                     store_bets(bets)
                     protocol.send_response_batch(len(bets))
-                    pass
+
                 if command == BET_COMMAND:
+                    data_size = protocol.receive_data_size()
                     bet = protocol.receive_bet(data_size)
                     store_bets([bet])
-                    #logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+                    logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
                     protocol.send_response_bet()
+
+                if command == DISCONNECT_COMMAND:
+                    print("SE RECIBE DESCONECTAR")
+                    logging.info("action: desconexion | result: success")
+                    break
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: ", e)
         except Exception as e:

@@ -11,10 +11,12 @@ import (
 
 const (
 	TIMEOUT_BATCH_RESPONSE = 10
+	MAX_SIZE_BATCH         = 8 * 1024
 
 	// comandos que envia
-	BET_COMMAND   = 9
-	BATCH_COMMAND = 19
+	BET_COMMAND        = 9
+	BATCH_COMMAND      = 19
+	DISCONNECT_COMMAND = 29
 
 	// comandos que recibe
 	RESPONSE_BET_COMMAND = 9
@@ -31,8 +33,6 @@ func NewProtocol(conn net.Conn) *Protocol {
 func serializeCommandBet(bet *Bet) ([]byte, error) {
 	buffer := new(bytes.Buffer)
 
-	binary.Write(buffer, binary.BigEndian, uint8(BET_COMMAND))
-
 	serializeData, err := bet.Serialize()
 	if err != nil {
 		return nil, err
@@ -48,12 +48,18 @@ func serializeCommandBet(bet *Bet) ([]byte, error) {
 }
 
 func (p *Protocol) SendBet(bet *Bet) error {
-	buffer, err := serializeCommandBet(bet)
+	buffer := new(bytes.Buffer)
+
+	binary.Write(buffer, binary.BigEndian, uint8(BET_COMMAND))
+
+	serializeCommandBet, err := serializeCommandBet(bet)
 	if err != nil {
 		return err
 	}
 
-	err = p.socket.Sendall(len(buffer), buffer)
+	binary.Write(buffer, binary.BigEndian, serializeCommandBet)
+
+	err = p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
 	if err != nil {
 		return err
 	}
@@ -99,6 +105,11 @@ func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
 
 	buffer.Write(bufferBetsData.Bytes())
 
+	if len(buffer.Bytes()) > MAX_SIZE_BATCH {
+		return fmt.Errorf("batch size is too big, max size is %d", MAX_SIZE_BATCH)
+	}
+
+	fmt.Println("Sending batch: ", len(bets))
 	err := p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
 	if err != nil {
 		return err
@@ -132,4 +143,17 @@ func (p *Protocol) ReceiveBatchResponse(amountBets int, exit chan os.Signal) (bo
 
 func (p *Protocol) Close() error {
 	return p.socket.Close()
+}
+
+func (p *Protocol) SendDisconnect() error {
+	buffer := new(bytes.Buffer)
+
+	binary.Write(buffer, binary.BigEndian, uint8(DISCONNECT_COMMAND))
+
+	err := p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

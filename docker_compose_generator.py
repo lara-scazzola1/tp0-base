@@ -25,6 +25,7 @@ def write_client_config(file, client_number):
     file.write("    image: client:latest\n")
     file.write("    volumes:\n")
     file.write("      - ./client/config.yaml:/config.yaml\n")
+    file.write("      - ./client/dataset:/dataset\n")
     file.write("    entrypoint: /client\n")
     file.write("    environment:\n")
     file.write(f"      - CLI_ID={client_number}\n")

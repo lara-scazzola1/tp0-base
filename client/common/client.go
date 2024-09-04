@@ -181,6 +181,7 @@ func processFile(file string, maxBatchSize int, c *Client, exit chan os.Signal) 
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
+	//defer c.protocol.Close()
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
@@ -197,6 +198,8 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 
 			files, err := getFilenames("dataset")
 			if err != nil {
+				c.protocol.SendDisconnect()
+				c.protocol.Close()
 				log.Errorf("Error getting filenames: %v", err)
 				return
 			}
@@ -205,10 +208,11 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 				err := processFile(file, maxBatchSize, c, exit)
 				if err != nil {
 					log.Errorf("Error processing file %s: %v", file, err)
-					return
+					continue
 				}
 			}
 
+			c.protocol.SendDisconnect()
 			c.protocol.Close()
 		}
 

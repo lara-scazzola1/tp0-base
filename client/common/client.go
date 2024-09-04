@@ -185,6 +185,15 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 		return
 	}
 
+	id, err := strconv.Atoi(c.config.ID)
+	if err != nil {
+		log.Errorf("Error converting ID to int: %v", err)
+		c.protocol.SendDisconnect()
+		c.protocol.Close()
+		return
+	}
+	c.protocol.SendId(uint8(id))
+
 	maxBatchSize := v.GetInt("batch.maxAmount")
 
 	files, err := getFilenames("dataset")
@@ -205,9 +214,12 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 		}
 	}
 	c.protocol.SendWaitingWinners()
-	fmt.Println("CLIENTE DESPUES DE MANDAR COMANDO WAITING WINNERS")
-	c.protocol.ReceiveWinners()
-	fmt.Println("DESPUES DE RECIBIR WINNERS")
+	documentsWinner, err := c.protocol.ReceiveWinners()
+	if err != nil {
+		log.Errorf("Error receiving winners: %v", err)
+	}
+
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", len(documentsWinner))
 
 	c.protocol.SendDisconnect()
 	c.protocol.Close()

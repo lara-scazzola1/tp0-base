@@ -12,16 +12,18 @@ const (
 	MAX_SIZE_BATCH = 8 * 1024
 
 	// comandos que envia
-	BET_COMMAND          = 9
-	BATCH_COMMAND        = 19
-	DISCONNECT_COMMAND   = 29
-	WAIT_WINNERS_COMMAND = 39
+	BET_COMMAND          = 1
+	BATCH_COMMAND        = 2
+	DISCONNECT_COMMAND   = 3
+	WAIT_WINNERS_COMMAND = 4
+	CLIENT_ID            = 5
 
 	// comandos que recibe
-	RESPONSE_BET_COMMAND         = 9
-	RESPONSE_BATCH_COMMAND_OK    = 19
-	RESPONSE_BATCH_COMMAND_ERROR = 20
-	RESPONSE_WINNERS_COMMAND     = 39
+	RESPONSE_BET_COMMAND         = 1
+	RESPONSE_BATCH_COMMAND_OK    = 2
+	RESPONSE_BATCH_COMMAND_ERROR = 3
+	RESPONSE_WINNERS_COMMAND     = 4
+	RESPONSE_CLIENT_ID           = 5
 )
 
 type Protocol struct {
@@ -163,15 +165,51 @@ func (p *Protocol) SendWaitingWinners() error {
 	return nil
 }
 
-func (p *Protocol) ReceiveWinners() (string, error) {
+func (p *Protocol) ReceiveWinners() ([]uint32, error) {
 	buf := make([]byte, 1)
 
 	err := p.socket.Recvall(1, buf)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if buf[0] != RESPONSE_WINNERS_COMMAND {
-		return "", fmt.Errorf("invalid response command")
+		return nil, fmt.Errorf("invalid response command")
 	}
-	return "", nil
+
+	buf = make([]byte, 4)
+	err = p.socket.Recvall(4, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	dataSize := binary.BigEndian.Uint32(buf)
+
+	buf = make([]byte, dataSize)
+	err = p.socket.Recvall(int(dataSize), buf)
+	if err != nil {
+		return nil, err
+	}
+
+	documentsWinner := []uint32{}
+	for i := 0; i < len(buf); i += 4 {
+		document := binary.BigEndian.Uint32(buf[i : i+4])
+		documentsWinner = append(documentsWinner, document)
+	}
+
+	return documentsWinner, nil
+}
+
+func (p *Protocol) SendId(id uint8) error {
+	buffer := new(bytes.Buffer)
+
+	binary.Write(buffer, binary.BigEndian, uint8(CLIENT_ID))
+
+	binary.Write(buffer, binary.BigEndian, id)
+
+	err := p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

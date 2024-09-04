@@ -2,16 +2,18 @@ import struct
 from common.utils import Bet
 
 # comandos que recibe
-BET_COMMAND = 9
-BATCH_COMMAND = 19
-DISCONNECT_COMMAND = 29
-WAIT_WINNERS_COMMAND = 39
+BET_COMMAND = 1
+BATCH_COMMAND = 2
+DISCONNECT_COMMAND = 3
+WAIT_WINNERS_COMMAND = 4
+CLIENT_ID = 5
 
 # comandos que manda
-RESPONSE_BET_COMMAND = 9
-RESPONSE_BATCH_COMMAND_OK    = 19
-RESPONSE_BATCH_COMMAND_ERROR = 20
-RESPONSE_WINNERS_COMMAND = 39
+RESPONSE_BET_COMMAND = 1
+RESPONSE_BATCH_COMMAND_OK    = 2
+RESPONSE_BATCH_COMMAND_ERROR = 3
+RESPONSE_WINNERS_COMMAND = 4
+RESPONSE_CLIENT_ID = 5
 
 class Protocol:
     def receive_command(self, skt):
@@ -51,5 +53,19 @@ class Protocol:
         else:
             skt.sendall(struct.pack('B', RESPONSE_BATCH_COMMAND_ERROR))
 
-    def send_response_winners(self, skt):
-        skt.sendall(struct.pack('B', RESPONSE_WINNERS_COMMAND))
+    def send_response_winners(self, skt, winning_documents):
+        data_documents = b''
+        for document in winning_documents:
+            data_documents += struct.pack('>I', document)
+
+        data = b''
+        data += struct.pack('B', RESPONSE_WINNERS_COMMAND)
+        data += struct.pack('>I', len(data_documents))
+        data += data_documents
+        skt.sendall(data)
+
+    def receive_client_id(self, skt):
+        data = skt.recvall(1)
+        return struct.unpack('B', data)[0]
+
+

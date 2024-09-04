@@ -184,23 +184,28 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 	if err := c.createClientSocket(); err != nil {
 		return
 	}
-	defer c.protocol.Close()
-	defer c.protocol.SendDisconnect()
 
 	maxBatchSize := v.GetInt("batch.maxAmount")
 
 	files, err := getFilenames("dataset")
 	if err != nil {
+		c.protocol.SendDisconnect()
+		c.protocol.Close()
 		log.Errorf("Error getting filenames: %v", err)
 		return
 	}
 
 	for _, file := range files {
-		err := processFile(file, maxBatchSize, c, exit)
-		if err != nil {
-			log.Errorf("Error processing file %s: %v", file, err)
-			continue
+		if getAgency(file) != c.config.ID {
+			err := processFile(file, maxBatchSize, c, exit)
+			if err != nil {
+				log.Errorf("Error processing file %s: %v", file, err)
+				continue
+			}
 		}
 	}
+	c.protocol.SendDisconnect()
+	c.protocol.Close()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	time.Sleep(c.config.LoopPeriod)
 }

@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"time"
 )
 
 const (
-	TIMEOUT_BATCH_RESPONSE = 10
-	MAX_SIZE_BATCH         = 8 * 1024
+	MAX_SIZE_BATCH = 8 * 1024
 
 	// comandos que envia
 	BET_COMMAND        = 9
@@ -19,7 +17,9 @@ const (
 	DISCONNECT_COMMAND = 29
 
 	// comandos que recibe
-	RESPONSE_BET_COMMAND = 9
+	RESPONSE_BET_COMMAND         = 9
+	RESPONSE_BATCH_COMMAND_OK    = 19
+	RESPONSE_BATCH_COMMAND_ERROR = 20
 )
 
 type Protocol struct {
@@ -106,10 +106,9 @@ func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
 	buffer.Write(bufferBetsData.Bytes())
 
 	if len(buffer.Bytes()) > MAX_SIZE_BATCH {
-		return fmt.Errorf("batch size is too big, max size is %d", MAX_SIZE_BATCH)
+		return fmt.Errorf("batch size is too big, max size is %d bytes", MAX_SIZE_BATCH)
 	}
 
-	fmt.Println("Sending batch: ", len(bets))
 	err := p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
 	if err != nil {
 		return err
@@ -118,27 +117,19 @@ func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
 }
 
 func (p *Protocol) ReceiveBatchResponse(amountBets int, exit chan os.Signal) (bool, error) {
-	amountResponses := 0
-	timeout := time.After(TIMEOUT_BATCH_RESPONSE * time.Second)
-	for i := 0; i < amountBets; i++ {
-		select {
-		case <-exit:
-			return false, fmt.Errorf("exit signal received")
-		case <-timeout:
-			return false, nil
-		default:
-			_, err := p.ReceiveResponseBet()
-			if err != nil {
-				return false, err
-			}
+	buf := make([]byte, 1)
 
-			amountResponses++
-		}
+	err := p.socket.Recvall(1, buf)
+	if err != nil {
+		return false, err
 	}
-	if amountResponses != amountBets {
-		return false, nil
+	if buf[0] == RESPONSE_BATCH_COMMAND_OK {
+		return true, nil
 	}
-	return true, nil
+	if buf[0] != RESPONSE_BATCH_COMMAND_ERROR {
+		return false, fmt.Errorf("error processing batch")
+	}
+	return false, fmt.Errorf("invalid response command")
 }
 
 func (p *Protocol) Close() error {

@@ -126,7 +126,7 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 		return fmt.Errorf("error receiving batch response: %w", err)
 	}
 	if !ok {
-		log.Errorf("action: apuesta_recibida | result: fail | cantidad: ${CANTIDAD_DE_APUESTAS}")
+		log.Errorf("action: apuesta_recibida | result: fail | cantidad: %v", len(batch))
 		return nil
 	}
 

@@ -9,6 +9,8 @@ DISCONNECT_COMMAND = 29
 
 # comandos que manda
 RESPONSE_BET_COMMAND = 9
+RESPONSE_BATCH_COMMAND_OK    = 19
+RESPONSE_BATCH_COMMAND_ERROR = 20
 
 class Protocol:
     def __init__(self, sock: Socket):
@@ -45,9 +47,11 @@ class Protocol:
     def send_response_bet(self):
         self.socket.sendall(struct.pack('B', RESPONSE_BET_COMMAND))
 
-    def send_response_batch(self, amount_bets: int):
-        for _ in range(amount_bets):
-            self.socket.sendall(struct.pack('B', RESPONSE_BET_COMMAND))
+    def send_response_batch(self, ok: bool):
+        if ok:
+            self.socket.sendall(struct.pack('B', RESPONSE_BATCH_COMMAND_OK))
+        else:
+            self.socket.sendall(struct.pack('B', RESPONSE_BATCH_COMMAND_ERROR))
 
     def close(self):
         self.socket.close()

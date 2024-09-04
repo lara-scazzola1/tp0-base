@@ -44,14 +44,13 @@ class Server:
                 if command == BATCH_COMMAND:
                     data_size = protocol.receive_data_size()
                     amount_bets_send, bets = protocol.receive_batch(data_size)
-                    if amount_bets_send != len(bets):
-                        logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
-                        protocol.send_response_batch(amount_bets_send)
-                        continue    
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
-                    #print(bets)
-                    store_bets(bets)
-                    protocol.send_response_batch(len(bets))
+                    ok = amount_bets_send == len(bets)
+                    if ok:
+                        logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount_bets_send}")
+                        store_bets(bets)
+                    else:
+                        logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")  
+                    protocol.send_response_batch(amount_bets_send)
 
                 if command == BET_COMMAND:
                     data_size = protocol.receive_data_size()
@@ -61,7 +60,6 @@ class Server:
                     protocol.send_response_bet()
 
                 if command == DISCONNECT_COMMAND:
-                    print("SE RECIBE DESCONECTAR")
                     logging.info("action: desconexion | result: success")
                     break
         except OSError as e:

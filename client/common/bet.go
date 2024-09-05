@@ -50,6 +50,18 @@ func NewBet(name string, lastname string, document uint32, birthDate string, num
 	}, nil
 }
 
+// Serialize serializes the bet data into a byte slice.
+// Encodings:
+// - uint8: length of the name
+// - string: name
+// - uint8: length of the lastname
+// - string: lastname
+// - uint32: document (big endian)
+// - uint8: day
+// - uint8: month
+// - uint16: year (big endian)
+// - uint32: number (big endian)
+// - uint8: agency
 func (b *Bet) Serialize() ([]byte, error) {
 	buffer := new(bytes.Buffer)
 

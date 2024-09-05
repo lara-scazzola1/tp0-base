@@ -14,7 +14,7 @@ class Protocol:
 
     def receive_command(self):
         command = struct.unpack('B', self.socket.recvall(1))[0]
-        data_size = struct.unpack('>I', self.socket.recvall(4))[0]
+        data_size = struct.unpack('B', self.socket.recvall(1))[0]
         return command, data_size
 
     def receive_bet(self, data_size: int):

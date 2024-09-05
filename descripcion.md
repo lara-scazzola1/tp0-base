@@ -76,7 +76,7 @@ Se crea la clase Bet en el cliente, que implementa una funcion para serializarse
 
 Corriendo:   
 ```bash
-bash docker-compose-run
+bash docker-compose-run.sh
 ```
 
 **Logs del cliente:**

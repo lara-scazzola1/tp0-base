@@ -51,12 +51,6 @@ class Server:
                         logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")  
                     self._protocol.send_response_batch(amount_bets_send, client_sock)
 
-                if command == BET_COMMAND:
-                    bet = self._protocol.receive_bet(client_sock)
-                    store_bets([bet])
-                    logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-                    self._protocol.send_response_bet(client_sock)
-
                 if command == DISCONNECT_COMMAND:
                     logging.info("action: desconexion | result: success")
                     break

@@ -2,26 +2,18 @@ import struct
 from common.utils import Bet
 
 # comandos que recibe
-BET_COMMAND = 9
-BATCH_COMMAND = 19
-DISCONNECT_COMMAND = 29
+BATCH_COMMAND = 1
+DISCONNECT_COMMAND = 2
 
 # comandos que manda
-RESPONSE_BET_COMMAND = 9
-RESPONSE_BATCH_COMMAND_OK    = 19
-RESPONSE_BATCH_COMMAND_ERROR = 20
+RESPONSE_BATCH_COMMAND_OK    = 1
+RESPONSE_BATCH_COMMAND_ERROR = 2
 
 class Protocol:
     def receive_command(self, skt):
         command = struct.unpack('B', skt.recvall(1))[0]
         return command
 
-    def receive_bet(self, skt):
-        data_size = struct.unpack('>I', skt.recvall(4))[0]
-        
-        data = skt.recvall(data_size)
-        return Bet.deserialize(data)
-    
     def receive_batch(self, skt):
         data_size = struct.unpack('>I', skt.recvall(4))[0]
 
@@ -39,9 +31,6 @@ class Protocol:
             if bet is not None:
                 bets.append(bet)
         return amount_bets_send, bets
-
-    def send_response_bet(self, skt):
-        skt.sendall(struct.pack('B', RESPONSE_BET_COMMAND))
 
     def send_response_batch(self, ok, skt):
         if ok:

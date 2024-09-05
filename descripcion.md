@@ -60,7 +60,17 @@ Se configuro un channel para recibir señales del sistema (os.Signal). En el met
 Se configuro el manejo de la señal SIGTERM utilizando el módulo signal de Python. El metodo stop_server se ha registrado como el manejador para la señal SIGTERM. Cuando el servidor recibe esta señal, se cierra el socket del servidor y se marca la variable _stop como True, lo que detiene el bucle principal del servidor.
 
 
-Para enviar la señal de terminacion se uso el comando `docker-compose stop` sobre el container que se queria detener (client1 o server). Se pudo ver que el servidor se detenia correctamente y el cliente tambien.
+Para enviar la señal de terminacion se uso el comando `docker stop` sobre el container que se queria detener (client1 o server). 
+```bash
+docker stop <container_name>
+```
+Se pudo ver que el servidor se detenia correctamente y el cliente tambien.
 
 ## Ejercicio 5
+
+Se crea la clase socket tanto en el cliente como en el servidor. Ambas clases tienen los metodos sendall y recvall para evitar short reads y short writes.
+
+Se crea la clase protocolo en ambas partes para manejar el envio y recepcion de las apuestas.
+
+Se crea la clase Bet en el cliente, que implementa una funcion para serializarse ella misma. En el caso del servidor se implemento la funcion para deserializar la apuesta en el archivo de utils.
 

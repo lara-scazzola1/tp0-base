@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	// comandos que envia
+	// Comandos que envia
 	BET_COMMAND = 0
 
-	// comandos que recibe
+	// Comandos que recibe
 	RESPONSE_BET_COMMAND = 0
 )
 

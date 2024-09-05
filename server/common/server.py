@@ -7,8 +7,8 @@ import signal
 
 class Server:
     def __init__(self, port, listen_backlog):
-        self._socket = Socket()
-        self._socket.bind_and_listen(port, listen_backlog)
+        self._server_socket = Socket()
+        self._server_socket.bind_and_listen(port, listen_backlog)
         self._stop = False
 
     def run(self):
@@ -23,7 +23,7 @@ class Server:
         signal.signal(signal.SIGTERM, self.stop_server)
 
         while not self._stop:
-            client_sock = self._socket.accept()
+            client_sock = self._server_socket.accept()
             if client_sock:
                 self.__handle_client_connection(client_sock)
         
@@ -52,6 +52,9 @@ class Server:
 
     
     def stop_server(self, signum, frame):
+        """
+        Stops the server
+        """
         self._server_socket.close()
         self._stop = True
 

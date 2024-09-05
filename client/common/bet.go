@@ -19,6 +19,7 @@ type Bet struct {
 	Agency     uint8
 }
 
+// NewBet creates a new Bet instance with the provided data.
 func NewBet(name string, lastname string, document uint32, birthDate string, number uint32, agency uint8) (*Bet, error) {
 	date := strings.Split(birthDate, "-")
 	if len(date) != 3 {
@@ -57,11 +58,12 @@ func NewBet(name string, lastname string, document uint32, birthDate string, num
 // - uint8: length of the lastname
 // - string: lastname
 // - uint32: document (big endian)
-// - uint8: day
-// - uint8: month
-// - uint16: year (big endian)
+// - uint8: day of birth
+// - uint8: month of birth
+// - uint16: year of birth (big endian)
 // - uint32: number (big endian)
 // - uint8: agency
+// Returns the serialized data or an error if the serialization fails.
 func (b *Bet) Serialize() ([]byte, error) {
 	buffer := new(bytes.Buffer)
 

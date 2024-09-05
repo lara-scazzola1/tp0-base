@@ -18,25 +18,42 @@ class Server:
         self._file_lock = multiprocessing.Lock()
         
     def __handle_receive_client_id(self, client_sock):
+        """
+        Receive a client id from a client socket
+        """
         client_id = self._protocol.receive_client_id(client_sock)
         self._connections[client_id] = client_sock
 
     def __handle_receive_batch(self, client_sock):
+        """
+        Receive a batch of bets from a client socket and store them.
+        Return the amount of bets received and if the operation was 
+        successful.
+        """
         amount_bets_send, bets_received = self._protocol.receive_batch(client_sock)
-        store_bets(bets_received)
+        with self._file_lock:
+            store_bets(bets_received)
         ok = amount_bets_send == len(bets_received)
         self._protocol.send_response_batch(ok, client_sock)
         return ok, len(bets_received)
 
-    def __send_winners(self):
-        with self._file_lock:
-            bets = load_bets()
-        agency_winners = [[] for i in range(TOTAL_CONNECTIONS)]
+    def __get_winners_by_agency(self):
+        """
+        Get the winners of the lottery
+        """
+        bets = load_bets()
+        winners_by_agency = [[] for i in range(TOTAL_CONNECTIONS)]
         for bet in bets:
             if has_won(bet):
-                agency_winners[bet.agency - 1].append(int(bet.document))
+                winners_by_agency[bet.agency - 1].append(int(bet.document))
+        return winners_by_agency
+
+    def __send_winners(self, winners_by_agency):
+        """
+        Send the winners of the lottery to the clients
+        """
         for id, conn in self._connections.items():
-            self._protocol.send_response_winners(conn, agency_winners[id - 1])
+            self._protocol.send_response_winners_by_agency(conn, winners_by_agency[id - 1])
             
     def __handle_close_connections(self):
         for conn in self._connections.values():
@@ -104,7 +121,8 @@ class Server:
                     for process in self._processes.values():
                         process.join()
 
-                    self.__send_winners()
+                    winners_by_agency = self.__get_winners_by_agency()
+                    self.__send_winners(winners_by_agency)
                     logging.info("action: sorteo | result: success")
 
                     self.__handle_close_connections()

@@ -12,14 +12,11 @@ const (
 	MAX_SIZE_BATCH = 8 * 1024
 
 	// comandos que envia
-	BET_COMMAND          = 1
 	BATCH_COMMAND        = 2
-	DISCONNECT_COMMAND   = 3
 	WAIT_WINNERS_COMMAND = 4
 	CLIENT_ID            = 5
 
 	// comandos que recibe
-	RESPONSE_BET_COMMAND         = 1
 	RESPONSE_BATCH_COMMAND_OK    = 2
 	RESPONSE_BATCH_COMMAND_ERROR = 3
 	RESPONSE_WINNERS_COMMAND     = 4
@@ -34,48 +31,47 @@ func NewProtocol(conn net.Conn) *Protocol {
 	return &Protocol{socket: NewSocket(conn)}
 }
 
-func serializeCommandBet(bet *Bet) ([]byte, error) {
-	buffer := new(bytes.Buffer)
-
-	serializeData, err := bet.Serialize()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := binary.Write(buffer, binary.BigEndian, uint32(len(serializeData))); err != nil {
-		return nil, err
-	}
-
-	buffer.Write(serializeData)
-
-	return buffer.Bytes(), nil
-}
-
+// SendBatch sends a batch of bets to the server.
+// Encodings:
+// - uint8: command
+// - uint32: size of the batch
+// - serialized bets
 func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
 	bufferBetsData := new(bytes.Buffer)
+
 	for _, bet := range bets {
 		select {
 		case <-exit:
 			return fmt.Errorf("exit signal received")
 		default:
-			serializeCommandBet, err := serializeCommandBet(bet)
+			serializeData, err := bet.Serialize()
 			if err != nil {
 				return err
 			}
-			binary.Write(bufferBetsData, binary.BigEndian, serializeCommandBet)
+
+			// Write the size of the bet data
+			if err := binary.Write(bufferBetsData, binary.BigEndian, uint8(len(serializeData))); err != nil {
+				return err
+			}
+
+			// Write the serialized bet data
+			bufferBetsData.Write(serializeData)
 		}
 	}
 
 	buffer := new(bytes.Buffer)
 
+	// Write the command
 	binary.Write(buffer, binary.BigEndian, uint8(BATCH_COMMAND))
 
 	if err := binary.Write(buffer, binary.BigEndian, uint32(len(bufferBetsData.Bytes()))); err != nil {
 		return err
 	}
 
+	// Write the serialized bets
 	buffer.Write(bufferBetsData.Bytes())
 
+	// If the batch size is bigger than the maximum allowed, return an error
 	if len(buffer.Bytes()) > MAX_SIZE_BATCH {
 		return fmt.Errorf("batch size is too big, max size is %d bytes", MAX_SIZE_BATCH)
 	}
@@ -87,7 +83,9 @@ func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
 	return nil
 }
 
-func (p *Protocol) ReceiveBatchResponse(amountBets int, exit chan os.Signal) (bool, error) {
+// ReceiveBatchResponse receives the response from the server after sending a batch.
+// Returns true if the response is ok, and false otherwise.
+func (p *Protocol) ReceiveBatchResponse(exit chan os.Signal) (bool, error) {
 	buf := make([]byte, 1)
 
 	err := p.socket.Recvall(1, buf)
@@ -103,10 +101,9 @@ func (p *Protocol) ReceiveBatchResponse(amountBets int, exit chan os.Signal) (bo
 	return false, fmt.Errorf("invalid response command")
 }
 
-func (p *Protocol) Close() error {
-	return p.socket.Close()
-}
-
+// SendWaitingWinners sends a command to the server to wait for the winners.
+// Encodings:
+// - uint8: command
 func (p *Protocol) SendWaitingWinners() error {
 	buffer := new(bytes.Buffer)
 
@@ -119,9 +116,12 @@ func (p *Protocol) SendWaitingWinners() error {
 	return nil
 }
 
+// ReceiveWinners receives the winners from the server.
+// Return a slice with the document numbers of the winners.
 func (p *Protocol) ReceiveWinners() ([]uint32, error) {
 	buf := make([]byte, 1)
 
+	// Receive the command
 	err := p.socket.Recvall(1, buf)
 	if err != nil {
 		return nil, err
@@ -130,6 +130,7 @@ func (p *Protocol) ReceiveWinners() ([]uint32, error) {
 		return nil, fmt.Errorf("invalid response command")
 	}
 
+	// Receive the size of the data
 	buf = make([]byte, 4)
 	err = p.socket.Recvall(4, buf)
 	if err != nil {
@@ -138,6 +139,7 @@ func (p *Protocol) ReceiveWinners() ([]uint32, error) {
 
 	dataSize := binary.BigEndian.Uint32(buf)
 
+	// Receive the data (documents)
 	buf = make([]byte, dataSize)
 	err = p.socket.Recvall(int(dataSize), buf)
 	if err != nil {
@@ -153,6 +155,10 @@ func (p *Protocol) ReceiveWinners() ([]uint32, error) {
 	return documentsWinner, nil
 }
 
+// SendId sends the client id to the server.
+// Encodings:
+// - uint8: command
+// - uint8: id
 func (p *Protocol) SendId(id uint8) error {
 	buffer := new(bytes.Buffer)
 
@@ -166,4 +172,8 @@ func (p *Protocol) SendId(id uint8) error {
 	}
 
 	return nil
+}
+
+func (p *Protocol) Close() error {
+	return p.socket.Close()
 }

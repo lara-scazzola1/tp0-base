@@ -78,7 +78,7 @@ func getAgency(filename string) string {
 	return strings.TrimSuffix(parts[1], ".csv")
 }
 
-// Parse a line from a CSV file into a Bet struct
+// Parse a line from file into a Bet
 func parseLine(line string, agency string) (*Bet, error) {
 	fields := strings.Split(line, ",")
 	if len(fields) < 5 {
@@ -121,7 +121,7 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 		return fmt.Errorf("error sending batch: %w", err)
 	}
 
-	ok, err := c.protocol.ReceiveBatchResponse(len(batch), exit)
+	ok, err := c.protocol.ReceiveBatchResponse(exit)
 	if err != nil {
 		return fmt.Errorf("error receiving batch response: %w", err)
 	}
@@ -133,6 +133,9 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 	return nil
 }
 
+// Processes the file, reading line by line. Each line is parsed to a bet
+// that accumulates in a vector, when the amount of bets is the size of
+// the batch, it sends the batch to the server and waits for its response
 func processFile(file string, maxBatchSize int, c *Client, exit chan os.Signal) error {
 	f, err := os.Open(file)
 	if err != nil {

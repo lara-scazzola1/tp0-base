@@ -109,3 +109,6 @@ action: sorteo | result: success
 
 ## Ejercicio 8
 
+Se modifica el servidor para lanzar un proceso por cada cliente que se conecta. 
+Luego se hace el join para esperar a que todos los procesos terminen. Y una vez que terminan se realiza el sorteo, y se le envia a todos los reesultados.
+Para manejar el acceso concurrente de los procesos al archivo donde se persisten las apuestas se utiliza un lock.

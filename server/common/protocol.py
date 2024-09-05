@@ -31,8 +31,8 @@ class Protocol:
         amount_bets_send = 0
         while bytes_read < data_size:
             amount_bets_send += 1
-            bet_size = struct.unpack('>I', data[bytes_read:bytes_read+4])[0]
-            bytes_read += 4
+            bet_size = struct.unpack('B', data[bytes_read:bytes_read+1])[0]
+            bytes_read += 1
             bet_data = data[bytes_read:bytes_read+bet_size]
             bytes_read += bet_size
             bet = Bet.deserialize(bet_data)

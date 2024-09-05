@@ -11,13 +11,11 @@ import (
 const (
 	MAX_SIZE_BATCH = 8 * 1024
 
-	// comandos que envia
-	BET_COMMAND        = 9
+	// Comandos que envia
 	BATCH_COMMAND      = 19
 	DISCONNECT_COMMAND = 29
 
-	// comandos que recibe
-	RESPONSE_BET_COMMAND         = 9
+	// Comandos que recibe
 	RESPONSE_BATCH_COMMAND_OK    = 19
 	RESPONSE_BATCH_COMMAND_ERROR = 20
 )
@@ -38,46 +36,13 @@ func serializeCommandBet(bet *Bet) ([]byte, error) {
 		return nil, err
 	}
 
-	if err := binary.Write(buffer, binary.BigEndian, uint32(len(serializeData))); err != nil {
+	if err := binary.Write(buffer, binary.BigEndian, uint8(len(serializeData))); err != nil {
 		return nil, err
 	}
 
 	buffer.Write(serializeData)
 
 	return buffer.Bytes(), nil
-}
-
-func (p *Protocol) SendBet(bet *Bet) error {
-	buffer := new(bytes.Buffer)
-
-	binary.Write(buffer, binary.BigEndian, uint8(BET_COMMAND))
-
-	serializeCommandBet, err := serializeCommandBet(bet)
-	if err != nil {
-		return err
-	}
-
-	binary.Write(buffer, binary.BigEndian, serializeCommandBet)
-
-	err = p.socket.Sendall(len(buffer.Bytes()), buffer.Bytes())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Protocol) ReceiveResponseBet() (bool, error) {
-	buf := make([]byte, 1)
-
-	err := p.socket.Recvall(1, buf)
-	if err != nil {
-		return false, err
-	}
-	if buf[0] != RESPONSE_BET_COMMAND {
-		return false, nil
-	}
-	return true, nil
 }
 
 func (p *Protocol) SendBatch(bets []*Bet, exit chan os.Signal) error {
@@ -132,10 +97,6 @@ func (p *Protocol) ReceiveBatchResponse(amountBets int, exit chan os.Signal) (bo
 	return false, fmt.Errorf("invalid response command")
 }
 
-func (p *Protocol) Close() error {
-	return p.socket.Close()
-}
-
 func (p *Protocol) SendDisconnect() error {
 	buffer := new(bytes.Buffer)
 
@@ -147,4 +108,8 @@ func (p *Protocol) SendDisconnect() error {
 	}
 
 	return nil
+}
+
+func (p *Protocol) Close() error {
+	return p.socket.Close()
 }

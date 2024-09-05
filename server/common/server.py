@@ -9,12 +9,13 @@ TOTAL_CONNECTIONS = 5
 
 class Server:
     def __init__(self, port, listen_backlog):
-        self._socket = Socket()
-        self._socket.bind_and_listen(port, listen_backlog)
+        self._server_socket = Socket()
+        self._server_socket.bind_and_listen(port, listen_backlog)
         self._stop = False
         self._protocol = Protocol()
         self._connections = {}
         self._processes = {}
+        self._file_lock = multiprocessing.Lock()
         
     def __handle_receive_client_id(self, client_sock):
         client_id = self._protocol.receive_client_id(client_sock)
@@ -28,7 +29,8 @@ class Server:
         return ok, len(bets_received)
 
     def __send_winners(self):
-        bets = load_bets()
+        with self._file_lock:
+            bets = load_bets()
         agency_winners = [[] for i in range(TOTAL_CONNECTIONS)]
         for bet in bets:
             if has_won(bet):
@@ -72,6 +74,7 @@ class Server:
     def stop_server(self, signum, frame):
         self._server_socket.close()
         self._stop = True
+        self.__handle_close_connections()
 
     def run(self):
         """
@@ -84,22 +87,29 @@ class Server:
 
         signal.signal(signal.SIGTERM, self.stop_server)
 
-        while not self._stop and len(self._connections) < TOTAL_CONNECTIONS:
-            client_sock = self._socket.accept()
-            if client_sock:
-                _ = self._protocol.receive_command(client_sock)
-                client_id = self._protocol.receive_client_id(client_sock)
-                self._connections[client_id] = client_sock
+        try:
+            while not self._stop:
+                if len(self._connections) < TOTAL_CONNECTIONS:
+                    client_sock = self._server_socket.accept()
+                    if client_sock:
+                        _ = self._protocol.receive_command(client_sock)
+                        client_id = self._protocol.receive_client_id(client_sock)
+                        self._connections[client_id] = client_sock
 
-                process = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock, client_id))
-                self._processes[client_id] = process
-                process.start()
+                        process = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock, client_id))
+                        self._processes[client_id] = process
+                        process.start()
 
-        for process in self._processes.values():
-            process.join()
+                if len(self._connections) == TOTAL_CONNECTIONS:
+                    for process in self._processes.values():
+                        process.join()
 
-        self.__send_winners()
-        logging.info("action: sorteo | result: success")
+                    self.__send_winners()
+                    logging.info("action: sorteo | result: success")
 
-        self.__handle_close_connections()
+                    self.__handle_close_connections()
+                    self._connections = {}
+
+        except Exception as e:
+            logging.error("action: run | result: fail | error: ", e)
 

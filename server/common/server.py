@@ -106,16 +106,15 @@ class Server:
 
         try:
             while not self._stop:
-                if len(self._connections) < TOTAL_CONNECTIONS:
-                    client_sock = self._server_socket.accept()
-                    if client_sock:
-                        _ = self._protocol.receive_command(client_sock)
-                        client_id = self._protocol.receive_client_id(client_sock)
-                        self._connections[client_id] = client_sock
+                client_sock = self._server_socket.accept()
+                if client_sock:
+                    _ = self._protocol.receive_command(client_sock)
+                    client_id = self._protocol.receive_client_id(client_sock)
+                    self._connections[client_id] = client_sock
 
-                        process = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock, client_id))
-                        self._processes[client_id] = process
-                        process.start()
+                    process = multiprocessing.Process(target=self.__handle_client_connection, args=(client_sock, client_id))
+                    self._processes[client_id] = process
+                    process.start()
 
                 if len(self._connections) == TOTAL_CONNECTIONS:
                     for process in self._processes.values():

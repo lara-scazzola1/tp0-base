@@ -4,7 +4,6 @@ def write_initial_config(file):
     file.write("name: tp0\n")
     file.write("services:\n")
 
-
 def write_server_config(file):
     file.write("  server:\n")
     file.write("    container_name: server\n")
@@ -15,6 +14,7 @@ def write_server_config(file):
     file.write("    environment:\n")
     file.write("      - PYTHONUNBUFFERED=1\n")
     file.write("      - LOGGING_LEVEL=DEBUG\n")
+    file.write("      - SERVER_LISTEN_BACKLOG=5\n")
     file.write("    networks:\n")
     file.write("      - testing_net\n\n")
 

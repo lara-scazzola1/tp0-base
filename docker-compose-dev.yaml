@@ -9,6 +9,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
+      - SERVER_LISTEN_BACKLOG=5
     networks:
       - testing_net
 

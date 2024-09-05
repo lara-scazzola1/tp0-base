@@ -31,7 +31,7 @@ class Server:
             if client_sock:
                 self.__handle_client_connection(client_sock)
 
-        self.stop_server(self, None, None)
+        self.stop_server(None, None)
         
     def __handle_receive_client_id(self, client_sock):
         """
@@ -117,5 +117,5 @@ class Server:
         """
         self._server_socket.close()
         self._stop = True
-        self.__handle_close_connections(self)
+        self.__handle_close_connections()
 

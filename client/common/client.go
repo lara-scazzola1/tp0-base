@@ -127,7 +127,8 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 	}
 	if !ok {
 		log.Errorf("action: apuesta_recibida | result: fail | cantidad: %v", len(batch))
-		return nil
+	} else {
+		log.Infof("action: apuesta_recibida | result: success | cantidad: %v", len(batch))
 	}
 
 	return nil
@@ -230,5 +231,5 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 
 	c.protocol.Close()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Millisecond * 100)
 }

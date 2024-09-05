@@ -74,3 +74,20 @@ Se crea la clase protocolo en ambas partes para manejar el envio y recepcion de 
 
 Se crea la clase Bet en el cliente, que implementa una funcion para serializarse ella misma. En el caso del servidor se implemento la funcion para deserializar la apuesta en el archivo de utils.
 
+Corriendo:   
+```bash
+bash docker-compose-run
+```
+
+**Logs del cliente:**
+```
+action: apuesta_enviada | result: success | dni: ${DNI} | numero: ${NUMERO}
+```
+
+**Logs del servidor:**
+```
+action: apuesta_almacenada | result: success | dni: ${DNI} | numero: ${NUMERO}
+```
+
+## Ejercicio 6
+

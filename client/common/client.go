@@ -127,7 +127,8 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 	}
 	if !ok {
 		log.Errorf("action: apuesta_recibida | result: fail | cantidad: %v", len(batch))
-		return nil
+	} else {
+		log.Infof("action: apuesta_recibida | result: success | cantidad: %v", len(batch))
 	}
 
 	return nil

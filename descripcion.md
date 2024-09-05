@@ -25,7 +25,7 @@ make docker-compose-logs
 
 Se montaron los archivos config.ini para el servidor y config.yaml para el cliente en volumenes para que puedan ser modificados sin tener que volver a construir la imagen.
 
-Para probar que verdaderamente funcionaba se agrego el comando docker-compose-start en el makefile. Se probo cambiando el puerto del servidor y se inicio el docker-compose con el comando make docker-compose-start y se pudo ver que no se lograron conectar, por lo que cambio la configuracion sin necesidad de hacer el build.
+Para probar que verdaderamente funcionaba se agrego el comando `docker-compose-start` en el makefile. Se probo cambiando el puerto del servidor y se inicio el docker-compose con el comando make docker-compose-start y se pudo ver que no se lograron conectar, por lo que cambio la configuracion sin necesidad de hacer el build.
 
 ## Ejercicio 3
 
@@ -60,5 +60,9 @@ Se configuro un channel para recibir señales del sistema (os.Signal). En el met
 Se configuro el manejo de la señal SIGTERM utilizando el módulo signal de Python. El metodo stop_server se ha registrado como el manejador para la señal SIGTERM. Cuando el servidor recibe esta señal, se cierra el socket del servidor y se marca la variable _stop como True, lo que detiene el bucle principal del servidor.
 
 
-Para enviar la señal de terminacion se uso el comando `docker-compose stop` sobre el container que se queria detener (client1 o server). Se pudo ver que el servidor se detenia correctamente y el cliente tambien.
+Para enviar la señal de terminacion se uso el comando `docker stop` sobre el container que se queria detener (client1 o server). 
+```bash
+docker stop <container_name>
+```
+Se pudo ver que el servidor se detenia correctamente y el cliente tambien.
 

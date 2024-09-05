@@ -29,6 +29,9 @@ class Bet:
         return (f"Bet(agency={self.agency}, first_name={self.first_name}, last_name={self.last_name}, "
                 f"document={self.document}, birthdate={self.birthdate}, number={self.number}, agency={self.agency})")
 
+    """
+    Deserialize a bet from a bytes object.
+    """
     @staticmethod
     def deserialize(data):
         bytes_read = 0

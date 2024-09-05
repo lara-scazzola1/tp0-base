@@ -13,6 +13,8 @@ func NewSocket(conn net.Conn) *Socket {
 	return &Socket{conn: conn}
 }
 
+// Recvall reads exactly size bytes from the connected socket and
+// stores them in buf. Returns an error if the reading fails.
 func (skt *Socket) Recvall(size int, buf []byte) error {
 	numBytesToRead := 0
 	for numBytesToRead < size {
@@ -28,6 +30,8 @@ func (skt *Socket) Recvall(size int, buf []byte) error {
 	return nil
 }
 
+// Sendall writes exactly size bytes from buf to the connected socket.
+// Returns an error if the writing fails.
 func (skt *Socket) Sendall(size int, buf []byte) error {
 	numBytesToSend := 0
 	for numBytesToSend < size {
@@ -40,6 +44,7 @@ func (skt *Socket) Sendall(size int, buf []byte) error {
 	return nil
 }
 
+// Close closes the connection to the socket.
 func (skt *Socket) Close() error {
 	return skt.conn.Close()
 }

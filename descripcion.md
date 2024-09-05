@@ -90,3 +90,5 @@ action: apuesta_almacenada | result: success | dni: ${DNI} | numero: ${NUMERO}
 ```
 
 ## Ejercicio 6
+
+Se modifica el cliente y el servidor para enviar las apuestas de a batches

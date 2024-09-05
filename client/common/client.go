@@ -78,19 +78,19 @@ func getAgency(filename string) string {
 	return strings.TrimSuffix(parts[1], ".csv")
 }
 
-// Parse a line from a CSV file into a Bet struct
+// Parse a line from a CSV file into a Bet
 func parseLine(line string, agency string) (*Bet, error) {
 	fields := strings.Split(line, ",")
 	if len(fields) < 5 {
 		return nil, fmt.Errorf("invalid line format: %v", line)
 	}
 
-	documento, err := strconv.ParseUint(fields[2], 10, 32)
+	document, err := strconv.ParseUint(fields[2], 10, 32)
 	if err != nil {
 		return nil, err
 	}
 
-	numero, err := strconv.ParseUint(fields[4], 10, 32)
+	number, err := strconv.ParseUint(fields[4], 10, 32)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +103,9 @@ func parseLine(line string, agency string) (*Bet, error) {
 	bet, err := NewBet(
 		fields[0],
 		fields[1],
-		uint32(documento),
+		uint32(document),
 		fields[3],
-		uint32(numero),
+		uint32(number),
 		uint8(agencia),
 	)
 	if err != nil {
@@ -121,7 +121,7 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 		return fmt.Errorf("error sending batch: %w", err)
 	}
 
-	ok, err := c.protocol.ReceiveBatchResponse(len(batch), exit)
+	ok, err := c.protocol.ReceiveBatchResponse(exit)
 	if err != nil {
 		return fmt.Errorf("error receiving batch response: %w", err)
 	}
@@ -133,6 +133,9 @@ func sendBatch(batch []*Bet, c *Client, exit chan os.Signal) error {
 	return nil
 }
 
+// Processes the file, reading line by line. Each line is parsed to a bet
+// that accumulates in a vector, when the amount of bets is the size of
+// the batch, it sends the batch to the server and waits for its response
 func processFile(file string, maxBatchSize int, c *Client, exit chan os.Signal) error {
 	f, err := os.Open(file)
 	if err != nil {
@@ -179,24 +182,29 @@ func processFile(file string, maxBatchSize int, c *Client, exit chan os.Signal) 
 	return scanner.Err()
 }
 
+func (c *Client) Close() {
+	c.protocol.SendDisconnect()
+	c.protocol.Close()
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 	if err := c.createClientSocket(); err != nil {
 		return
 	}
 
-	maxBatchSize := v.GetInt("batch.maxAmount")
-
+	// Get all filenames in the dataset directory
 	files, err := getFilenames("dataset")
 	if err != nil {
-		c.protocol.SendDisconnect()
-		c.protocol.Close()
+		c.Close()
 		log.Errorf("Error getting filenames: %v", err)
 		return
 	}
 
+	// Send the bets of the files to the server
+	maxBatchSize := v.GetInt("batch.maxAmount")
 	for _, file := range files {
-		if getAgency(file) != c.config.ID {
+		if getAgency(file) == c.config.ID {
 			err := processFile(file, maxBatchSize, c, exit)
 			if err != nil {
 				log.Errorf("Error processing file %s: %v", file, err)
@@ -204,8 +212,8 @@ func (c *Client) StartClientLoop(exit chan os.Signal, v *viper.Viper) {
 			}
 		}
 	}
-	c.protocol.SendDisconnect()
-	c.protocol.Close()
+
+	c.Close()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-	time.Sleep(c.config.LoopPeriod)
+	time.Sleep(time.Second * 3)
 }

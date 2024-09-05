@@ -49,3 +49,16 @@ Luego, para ejecutar el script, se debe ejecutar el siguiente comando:
 
 El script levanta un container de doker que se conecta a la red que se configuro en el docker compose (en la que se lanzo el servidor y el cliente). Luego se una netcat para enviarle un mensaje al servidor, si el servidor responde con el mismo mensaje que se envio, el script imprime por pantalla `action: test_echo_server | result: success`, de lo contrario `imprimir:action: test_echo_server | result: fail`.
 
+## Ejercicio 4
+
+### Cliente
+
+Se configuro un channel para recibir señales del sistema (os.Signal). En el metodo StartClientLoop, se asegura que la conexión con el servidor se cierre correctamente cuando se recibe una señal, simplemente si se recibe la señal de exit se sale del bucle y se cierra todo antes de irse de scope. Esto se realiza en el bloque select, que escucha tanto la señal de salida como el flujo normal del programa.
+
+### Servidor
+
+Se configuro el manejo de la señal SIGTERM utilizando el módulo signal de Python. El metodo stop_server se ha registrado como el manejador para la señal SIGTERM. Cuando el servidor recibe esta señal, se cierra el socket del servidor y se marca la variable _stop como True, lo que detiene el bucle principal del servidor.
+
+
+Para enviar la señal de terminacion se uso el comando `docker-compose stop` sobre el container que se queria detener (client1 o server). Se pudo ver que el servidor se detenia correctamente y el cliente tambien.
+

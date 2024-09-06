@@ -1,0 +1,11 @@
+Hola, perdon que suba esto ahora cuando se que ya no se puede por haber subido la entrega. Pero por las dudas lo dejo comentado.
+
+En el ejercicio me falto colocar bien los finally. 
+  
+En el loop de la conexion con el cliente el finally:
+finally:
+    client_sock.close()
+
+En el loop general el finally:
+finally:
+    self.stop_server(None, None)

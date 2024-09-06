@@ -55,9 +55,9 @@ class Server:
                 if command == BATCH_COMMAND:
                     ok, amount = self.__handle_receive_batch()
                     if ok:
-                        logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount}")
+                        logging.info(f"action: batch_recibido | result: success | cantidad: {amount}")
                     else:
-                        logging.error(f"action: apuesta_recibida | result: fail | cantidad: {amount}")  
+                        logging.error(f"action: batch_recibido | result: fail | cantidad: {amount}")  
 
                 if command == DISCONNECT_COMMAND:
                     logging.info("action: desconexion | result: success")

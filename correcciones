@@ -1,0 +1,9 @@
+Hola, perdon que suba esto ahora cuando se que ya no se puede por haber subido la entrega. Pero por las dudas lo dejo comentado.
+
+En el ejercicio me falto colocar bien los finally. 
+  
+En el loop de la conexion con el cliente el finally:
+finally:
+    client_sock.close()
+
+En el loop general deberia haber un try-catch y en el finally hacer el stop del server. Y chequear que no se haya frenado antes.

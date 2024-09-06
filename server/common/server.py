@@ -86,6 +86,8 @@ class Server:
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: ", e)
+        finally:
+            client_sock.close()
 
     
     def stop_server(self, signum, frame):
@@ -129,4 +131,6 @@ class Server:
 
         except Exception as e:
             logging.error("action: run | result: fail | error: ", e)
+        finally:
+            self.stop_server(None, None)
 

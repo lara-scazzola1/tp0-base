@@ -25,13 +25,17 @@ class Server:
         """
 
         signal.signal(signal.SIGTERM, self.stop_server)
-
-        while not self._stop:
-            client_sock = self._server_socket.accept()
-            if client_sock:
-                self.__handle_client_connection(client_sock)
-
-        self.stop_server(None, None)
+        try:
+            while not self._stop:
+                client_sock = self._server_socket.accept()
+                if client_sock:
+                    self.__handle_client_connection(client_sock)
+        except Exception as e:
+            logging.error("action: server | result: fail | error: ", e)
+        finally:
+            if not self._stop:
+                self._server_socket.close()
+                self.__handle_close_connections()
         
     def __handle_receive_client_id(self, client_sock):
         """
